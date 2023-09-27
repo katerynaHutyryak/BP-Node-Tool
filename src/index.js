@@ -38,31 +38,32 @@ async function fetchCommits () {
 
 
 function processFetchedData (comments, commits) {
-    const userCommitActivity = {}
+    const userCommitData = {}
 
     comments.forEach(el => {
         const userName = el.user.login
-        if(!userCommitActivity[userName]) {
-            userCommitActivity[userName] = {
+        if(!userCommitData[userName]) {
+            userCommitData[userName] = {
                 commentsNum : 1,
                 commits : 0
             }
         } else {
-            userCommitActivity[userName].commentsNum += 1
+            userCommitData[userName].commentsNum += 1
         }
     })
 
     commits.forEach(el => {
         const userName = el.author.login
-        if(userCommitActivity[userName]) {
-            userCommitActivity[userName].commits = el.total
+        if(userCommitData[userName]) {
+            userCommitData[userName].commits = el.total
         } else {
-            userCommitActivity[userName] = {
+            userCommitData[userName] = {
                 commentsNum : 0,
                 commits : el.total
             }
         }
     })
+    return userCommitData
 }
 
 
@@ -70,7 +71,8 @@ async function main() {
     try{
         const comments = await fetchCommitComments()
         const commits = await fetchCommits()
-        processFetchedData(comments, commits)
+        const userCommitData = processFetchedData(comments, commits)
+        return userCommitData
     } catch (err) {
         console.log(err)
     }
