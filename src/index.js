@@ -6,6 +6,7 @@ const [owner, repo] = process.argv[3].split('/')
 const apiBase = 'https://api.github.com'
 
 const commentsArray = []
+const commitsArray = []
 
 async function fetchCommitComments () {
     let response
@@ -24,7 +25,6 @@ async function fetchCommitComments () {
         commentsArray.push(...response.data)    
         page++
     } while (response.data.length === 100)
-    console.log(commentsArray.length)
 }
 
 fetchCommitComments()
