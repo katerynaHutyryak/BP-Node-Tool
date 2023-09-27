@@ -5,12 +5,10 @@ const config = require('./config')
 const [owner, repo] = process.argv[3].split('/')
 const apiBase = 'https://api.github.com'
 
-const commentsArray = []
-const commitsArray = []
-
 async function fetchCommitComments () {
     let response
     let page = 1
+    const commentsArray = []
     do {
         try{
             response = await axios.get(`${apiBase}/repos/${owner}/${repo}/comments?per_page=100&page=${page}`, {
@@ -25,17 +23,15 @@ async function fetchCommitComments () {
         commentsArray.push(...response.data)    
         page++
     } while (response.data.length === 100)
+    return commentsArray
 }
 
-fetchCommitComments()
 
 async function fetchCommits () {
     try {
         const response = await axios.get(`${apiBase}/repos/${owner}/${repo}/stats/contributors`)
-        commitsArray.push(response.data)
+        return response.data
     } catch (err) {
         console.log(err)
     }
 }
-
-fetchCommits()
