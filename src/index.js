@@ -28,3 +28,14 @@ async function fetchCommitComments () {
 }
 
 fetchCommitComments()
+
+async function fetchCommits () {
+    try {
+        const response = await axios.get(`${apiBase}/repos/${owner}/${repo}/stats/contributors`)
+        commitsArray.push(response.data)
+    } catch (err) {
+        console.log(err)
+    }
+}
+
+fetchCommits()
