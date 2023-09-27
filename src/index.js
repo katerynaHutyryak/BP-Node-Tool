@@ -35,3 +35,44 @@ async function fetchCommits () {
         console.log(err)
     }
 }
+
+
+function processFetchedData (comments, commits) {
+    const userCommitActivity = {}
+
+    comments.forEach(el => {
+        const userName = el.user.login
+        if(!userCommitActivity[userName]) {
+            userCommitActivity[userName] = {
+                commentsNum : 1,
+                commits : 0
+            }
+        } else {
+            userCommitActivity[userName].commentsNum += 1
+        }
+    })
+
+    commits.forEach(el => {
+        const userName = el.author.login
+        if(userCommitActivity[userName]) {
+            userCommitActivity[userName].commits = el.total
+        } else {
+            userCommitActivity[userName] = {
+                commentsNum : 0,
+                commits : el.total
+            }
+        }
+    })
+}
+
+
+async function main() {
+    try{
+        const comments = await fetchCommitComments()
+        const commits = await fetchCommits()
+        processFetchedData(comments, commits)
+    } catch (err) {
+        console.log(err)
+    }
+}
+main()
