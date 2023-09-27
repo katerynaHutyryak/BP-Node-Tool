@@ -77,4 +77,13 @@ async function main() {
         console.log(err)
     }
 }
-main()
+
+main().then(userCommitData => {
+    const userCommitArray = Object.entries(userCommitData)
+    userCommitArray.sort((a, b) => b[1].commentsNum - a[1].commentsNum)
+    .forEach(([username, userData]) => {
+        console.log(`${userData.commentsNum} comments, ${username} (${userData.commits} commits)`)
+    })
+}).catch(err => {
+    console.log(err)
+})
