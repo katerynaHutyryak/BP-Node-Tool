@@ -4,6 +4,12 @@ const config = require('./config')
 
 const [owner, repo] = process.argv[3].split('/')
 const apiBase = 'https://api.github.com'
+const axiosConfig = {
+    headers: {
+      Authorization: `token ${config.GITHUB_PERSONAL_ACCESS_TOKEN}`,
+      'X-GitHub-Api-Version': '2022-11-28',
+    },
+  }
 
 async function fetchCommitComments () {
     let response
@@ -11,12 +17,7 @@ async function fetchCommitComments () {
     const commentsArray = []
     do {
         try{
-            response = await axios.get(`${apiBase}/repos/${owner}/${repo}/comments?per_page=100&page=${page}`, {
-                headers: {
-                    Authorization: `token ${config.GITHUB_PERSONAL_ACCESS_TOKEN}`,
-                    'X-GitHub-Api-Version': '2022-11-28' 
-                }
-            })
+            response = await axios.get(`${apiBase}/repos/${owner}/${repo}/comments?per_page=100&page=${page}`, axiosConfig)
         } catch (err) {
             console.log(err)
         }
@@ -29,7 +30,7 @@ async function fetchCommitComments () {
 
 async function fetchCommits () {
     try {
-        const response = await axios.get(`${apiBase}/repos/${owner}/${repo}/stats/contributors`)
+        const response = await axios.get(`${apiBase}/repos/${owner}/${repo}/stats/contributors`, axiosConfig)
         return response.data
     } catch (err) {
         console.log(err)
