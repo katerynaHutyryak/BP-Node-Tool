@@ -117,10 +117,9 @@ async function main() {
   userCommitArray
     .sort((a, b) => b[1].commentsNum - a[1].commentsNum)
     .forEach(([username, userData]) => {
-      console.log(
-        `${userData.commentsNum}`.padStart(2, ' ') +
-          ` comments, ${username} (${userData.commitsNum} commits)`,
-      )
+      const commentLog = `${userData.commentsNum} comments,`.padStart(14, ' ')
+      const commitLog = `${username} (${userData.commitsNum} commits)`
+      console.log(`${commentLog} ${commitLog}`)
     })
 }
 
