@@ -4,6 +4,7 @@ const progressBar = new cliProgress.SingleBar(
   {
     hideCursor: true,
     stopOnComplete: true,
+    clearOnComplete: true,
   },
   cliProgress.Presets.shades_classic,
 )
