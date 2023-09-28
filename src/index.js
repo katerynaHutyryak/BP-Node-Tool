@@ -1,4 +1,5 @@
 const axios = require('axios')
+const cliProgress = require('cli-progress')
 
 const config = require('./config')
 const throwApiLimitError = require('./util')
@@ -73,10 +74,10 @@ function processFetchedData(comments, commits) {
 }
 
 async function fetchApiLimits() {
-  const response = await axios.get(`${apiBase}/rate_limi`, axiosConfig)
+  const response = await axios.get(`${apiBase}/rate_limit`, axiosConfig)
   const { remaining: remainingCalls } = response.data.resources.core
 
-  console.log(`${remainingCalls} API calls left\n`)
+  console.log(`\n${remainingCalls} API calls left\n`)
 
   if (remainingCalls <= 0) {
     const resetTime = new Date(response.headers['x-ratelimit-reset'] * 1000)
@@ -86,11 +87,32 @@ async function fetchApiLimits() {
   }
 }
 
+const progressBar = new cliProgress.SingleBar(
+  {
+    hideCursor: true,
+    stopOnComplete: true,
+  },
+  cliProgress.Presets.shades_classic,
+)
+
 async function main() {
   await fetchApiLimits()
+
+  progressBar.start(100, 0)
+  progressBar.increment(10)
+
   const comments = await fetchCommitComments()
+
+  progressBar.increment(20)
+
   const commits = await fetchCommits()
+
+  progressBar.increment(30)
+
   const userCommitData = processFetchedData(comments, commits)
+
+  progressBar.increment(100)
+
   return userCommitData
 }
 
