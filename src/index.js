@@ -1,11 +1,11 @@
 const axios = require('axios')
-const cliProgress = require('cli-progress')
+const URLSearchParams = require('url').URLSearchParams
 
 const config = require('./config')
-const throwApiLimitError = require('./util')
+const { throwApiLimitError, progressBar, timeFromNow } = require('./utils')
 
 const [owner, repo] = process.argv[3].split('/')
-const apiBase = 'https://api.github.com'
+const BASE_URL = 'https://api.github.com'
 const axiosConfig = {
   headers: {
     Authorization: `token ${config.GITHUB_PERSONAL_ACCESS_TOKEN}`,
@@ -14,28 +14,36 @@ const axiosConfig = {
 }
 
 async function fetchCommitComments() {
+  const MAX_PER_PAGE = 100
   let response
   let page = 1
-  const commentsArray = []
+  const comments = []
+
   do {
     try {
-      response = await axios.get(
-        `${apiBase}/repos/${owner}/${repo}/comments?per_page=100&page=${page}`,
-        axiosConfig,
-      )
+      const searchParams = new URLSearchParams({
+        per_page: MAX_PER_PAGE,
+        page: page,
+      }).toString()
+
+      const url = `${BASE_URL}/repos/${owner}/${repo}/comments?${searchParams}`
+
+      response = await axios.get(url, axiosConfig)
     } catch (err) {
       throwApiLimitError(err)
     }
-    commentsArray.push(...response.data)
+
+    comments.push(...response.data)
     page++
-  } while (response.data.length === 100)
-  return commentsArray
+  } while (response.data.length === MAX_PER_PAGE)
+
+  return comments
 }
 
 async function fetchCommits() {
   try {
     const response = await axios.get(
-      `${apiBase}/repos/${owner}/${repo}/stats/contributors`,
+      `${BASE_URL}/repos/${owner}/${repo}/stats/contributors`,
       axiosConfig,
     )
     return response.data
@@ -44,74 +52,65 @@ async function fetchCommits() {
   }
 }
 
-function processFetchedData(comments, commits) {
+function getUserCommitData(comments, commits) {
   const userCommitData = {}
 
-  comments.forEach(el => {
-    const userName = el.user.login
+  comments.forEach(comment => {
+    const userName = comment.user.login
     if (!userCommitData[userName]) {
       userCommitData[userName] = {
         commentsNum: 1,
-        commits: 0,
+        commitsNum: 0,
       }
     } else {
       userCommitData[userName].commentsNum += 1
     }
   })
 
-  commits.forEach(el => {
-    const userName = el.author.login
-    if (userCommitData[userName]) {
-      userCommitData[userName].commits = el.total
-    } else {
+  commits.forEach(commit => {
+    const userName = commit.author.login
+    if (!userCommitData[userName]) {
       userCommitData[userName] = {
         commentsNum: 0,
-        commits: el.total,
+        commitsNum: commit.total,
       }
+    } else {
+      userCommitData[userName].commitsNum = commit.total
     }
   })
   return userCommitData
 }
 
 async function fetchApiLimits() {
-  const response = await axios.get(`${apiBase}/rate_limit`, axiosConfig)
+  const response = await axios.get(`${BASE_URL}/rate_limit`, axiosConfig)
   const { remaining: remainingCalls } = response.data.resources.core
 
   console.log(`\n${remainingCalls} API calls left\n`)
 
   if (remainingCalls <= 0) {
-    const resetTime = new Date(response.headers['x-ratelimit-reset'] * 1000)
-    const now = new Date()
-    const timeToWait = Math.floor((resetTime - now) / 1000 / 60)
-    throw Error(`API limit is exceeded. Please, return in ${timeToWait} min`)
+    const resetTimestamp = response.headers['x-ratelimit-reset'] * 1000
+    throw Error(
+      `API limit is exceeded. Try again in ${timeFromNow(resetTimestamp)} min`,
+    )
   }
 }
-
-const progressBar = new cliProgress.SingleBar(
-  {
-    hideCursor: true,
-    stopOnComplete: true,
-  },
-  cliProgress.Presets.shades_classic,
-)
 
 async function main() {
   await fetchApiLimits()
 
   progressBar.start(100, 0)
-  progressBar.increment(10)
+  progressBar.update(30)
 
-  const comments = await fetchCommitComments()
+  const [comments, commits] = await Promise.all([
+    fetchCommitComments(),
+    fetchCommits(),
+  ])
 
-  progressBar.increment(20)
+  progressBar.update(60)
 
-  const commits = await fetchCommits()
+  const userCommitData = getUserCommitData(comments, commits)
 
-  progressBar.increment(30)
-
-  const userCommitData = processFetchedData(comments, commits)
-
-  progressBar.increment(100)
+  progressBar.update(100)
 
   const userCommitArray = Object.entries(userCommitData)
   userCommitArray
@@ -119,7 +118,7 @@ async function main() {
     .forEach(([username, userData]) => {
       console.log(
         `${userData.commentsNum}`.padStart(2, ' ') +
-          ` comments, ${username} (${userData.commits} commits)`,
+          ` comments, ${username} (${userData.commitsNum} commits)`,
       )
     })
 }
