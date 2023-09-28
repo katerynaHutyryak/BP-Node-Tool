@@ -113,10 +113,6 @@ async function main() {
 
   progressBar.increment(100)
 
-  return userCommitData
-}
-
-main().then(userCommitData => {
   const userCommitArray = Object.entries(userCommitData)
   userCommitArray
     .sort((a, b) => b[1].commentsNum - a[1].commentsNum)
@@ -126,4 +122,6 @@ main().then(userCommitData => {
           ` comments, ${username} (${userData.commits} commits)`,
       )
     })
-})
+}
+
+main()
