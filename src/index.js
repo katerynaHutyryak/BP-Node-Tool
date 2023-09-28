@@ -1,5 +1,6 @@
 const axios = require('axios')
 const URLSearchParams = require('url').URLSearchParams
+const chalk = require('chalk')
 
 const config = require('./config')
 const { throwApiLimitError, progressBar, timeFromNow } = require('./utils')
@@ -85,7 +86,7 @@ async function fetchApiLimits() {
   const response = await axios.get(`${BASE_URL}/rate_limit`, axiosConfig)
   const { remaining: remainingCalls } = response.data.resources.core
 
-  console.log(`\n${remainingCalls} API calls left\n`)
+  console.log(chalk.yellow(`\n${remainingCalls} API calls left\n`))
 
   if (remainingCalls <= 0) {
     const resetTimestamp = response.headers['x-ratelimit-reset'] * 1000
