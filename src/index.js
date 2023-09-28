@@ -87,15 +87,11 @@ async function fetchApiLimits() {
 }
 
 async function main() {
-  try {
-    await fetchApiLimits()
-    const comments = await fetchCommitComments()
-    const commits = await fetchCommits()
-    const userCommitData = processFetchedData(comments, commits)
-    return userCommitData
-  } catch (err) {
-    console.log(err)
-  }
+  await fetchApiLimits()
+  const comments = await fetchCommitComments()
+  const commits = await fetchCommits()
+  const userCommitData = processFetchedData(comments, commits)
+  return userCommitData
 }
 
 main().then(userCommitData => {
